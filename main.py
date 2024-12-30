@@ -36,13 +36,14 @@ async def upload_image(file: UploadFile = File(...)):
         results = model_yolo(image, stream=True)
 
         # Process results: count and crop objects
-        num_objects = process_yolo_results(image, file.filename, results)
+        num_objects, object_classes = process_yolo_results(image, file.filename, results)
 
         return {
             "message": "Image uploaded and detected successfully",
             "file_name": file.filename,
             "image_shape": image.shape,
-            "number_of_detected_objects": num_objects
+            "number_of_detected_objects": num_objects,
+            "detected_objects": object_classes  # Include the dictionary
         }
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": str(e)})
@@ -65,8 +66,9 @@ def process_yolo_results(image, file_name, results):
     and save them to the 'detected' folder with their class names.
     """
     class_names = model_yolo.names
-
     num_objects = 0
+    object_classes = {}  # Dictionary to hold object numbers and class names
+
     for result in results:
         for box, cls in zip(result.boxes.xyxy.cpu().numpy(), result.boxes.cls.cpu().numpy()):
             # Increment object count
@@ -78,42 +80,15 @@ def process_yolo_results(image, file_name, results):
 
             # Get class name
             class_name = class_names[int(cls)]
+            object_classes[num_objects] = class_name  # Add to dictionary
 
             # Create a folder for each class
             class_dir = DETECTED_DIR / class_name
             class_dir.mkdir(parents=True, exist_ok=True)
 
             # Save the cropped image
-            base_name = file_name.rsplit('.', 1)[0]
+            base_name = file_name.rsplit('.', 1)[0]  # Remove file extension
             cropped_file_path = class_dir / f"{base_name}_object_{num_objects}.png"
             cv2.imwrite(str(cropped_file_path), cropped_object)
     
-    return num_objects
-
-# function for cropping each detection, returning the largest one and resizing to a specified size in px
-def yolo_and_crop(image_array, yolo_model):
-    yolo_res = yolo_model(image_array)
-    yolo_pd = yolo_res.pandas().xyxy[0]
-
-    num_objects = yolo_pd.shape[0]
-    boxes = yolo_pd.iloc[:, 0:4]
-    # scores = yolo_pd.iloc[:, 4]  # unused results
-    # class_names = yolo_pd.iloc[:, 6]
-    # create dictionary to hold count of objects for image name
-    img_list = []
-    dims_mult = []
-    for i in range(num_objects):
-        # get box coordinates
-        xmin, ymin, xmax, ymax = boxes.iloc[i]
-        # crop detection from image (take an additional 5 pixels around all edges)
-        cropped_img = image_array[int(ymin) - 0:int(ymax) + 0, int(xmin) - 0:int(xmax) + 0]  # 0 px added to the frame
-        mult = cropped_img.shape[0] * cropped_img.shape[1]
-        img_list.append(cropped_img)
-        dims_mult.append(mult)
-
-    largest_img_indx = dims_mult.index(max(dims_mult))
-    largest_img = img_list[largest_img_indx]
-    return result
-
-
-# Run the app with: uvicorn app:app --reload
+    return num_objects, object_classes
