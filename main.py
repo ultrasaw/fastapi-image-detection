@@ -1,13 +1,20 @@
 from pathlib import Path
+from ultralytics import YOLO # pip install ultralyitcs
 from fastapi import FastAPI, File, UploadFile # pip install fastapi uvicorn python-multipart
 from fastapi.responses import FileResponse, JSONResponse
-import shutil
+import shutil, cv2
+import numpy as np
 
 app = FastAPI()
 
-# Define the upload directory
-UPLOAD_DIR = Path("uploaded_images")
-UPLOAD_DIR.mkdir(exist_ok=True)
+UPLOAD_DIR = Path("uploads/raw")
+UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+
+PROCESSED_DIR = Path("uploads/processed")
+PROCESSED_DIR.mkdir(exist_ok=True)
+
+# Load a pretrained YOLO model
+model_yolo = YOLO("yolo11l.pt")
 
 @app.post("/upload-image/")
 async def upload_image(file: UploadFile = File(...)):
@@ -17,9 +24,34 @@ async def upload_image(file: UploadFile = File(...)):
         with file_path.open("wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
 
-        return {"message": "Image uploaded successfully", "file_name": file.filename}
+        # Read the file for OpenCV processing
+        with file_path.open("rb") as image_file:
+            nparr = np.frombuffer(image_file.read(), np.uint8)
+            image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        
+        if image is None:
+            return JSONResponse(status_code=400, content={"error": "Invalid image file"})
+
+        # detect w/ YOLO
+        results = model_yolo(image)
+
+        processed_file_path = PROCESSED_DIR / f"processed_{file.filename}"
+        
+        # Save the processed image (dummy example using original image)
+        cv2.imwrite(str(processed_file_path), image)
+
+        return {
+            "message": "Image uploaded and processed successfully",
+            "file_name": file.filename,
+            "image shape": {image.shape}, 
+            # "number of detected objects": {num_objects},
+            "processed_file": str(processed_file_path)
+        }
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": str(e)})
+    finally:
+        await file.close()
+
 
 @app.get("/download-image/{file_name}")
 async def download_image(file_name: str):
@@ -30,8 +62,8 @@ async def download_image(file_name: str):
         return JSONResponse(status_code=404, content={"error": "File not found"})
 
 # function for cropping each detection, returning the largest one and resizing to a specified size in px
-def yolo_and_crop(image_array, torch_model):
-    yolo_res = torch_model(image_array)
+def yolo_and_crop(image_array, yolo_model):
+    yolo_res = yolo_model(image_array)
     yolo_pd = yolo_res.pandas().xyxy[0]
 
     num_objects = yolo_pd.shape[0]
