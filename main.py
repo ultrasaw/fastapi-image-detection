@@ -32,8 +32,11 @@ async def upload_image(file: UploadFile = File(...)):
         if image is None:
             return JSONResponse(status_code=400, content={"error": "Invalid image file"})
 
-        # detect w/ YOLO
-        results = model_yolo(image)
+        # Detect w/ YOLO
+        results = model_yolo(image, stream=True)
+
+        # Process results: count and crop objects
+        num_objects = process_yolo_results(image, results)
 
         processed_file_path = PROCESSED_DIR / f"processed_{file.filename}"
         
@@ -43,8 +46,8 @@ async def upload_image(file: UploadFile = File(...)):
         return {
             "message": "Image uploaded and processed successfully",
             "file_name": file.filename,
-            "image shape": {image.shape}, 
-            # "number of detected objects": {num_objects},
+            "image_shape": image.shape,
+            "number_of_detected_objects": num_objects,
             "processed_file": str(processed_file_path)
         }
     except Exception as e:
@@ -60,6 +63,33 @@ async def download_image(file_name: str):
         return FileResponse(file_path, media_type="application/octet-stream", filename=file_name)
     else:
         return JSONResponse(status_code=404, content={"error": "File not found"})
+
+
+def process_yolo_results(image, results):
+    """
+    Process YOLO results: count objects, crop detected objects,
+    and save them to the processed folder.
+    """
+    num_objects = 0
+    for i, result in enumerate(results):
+        for box, cls in zip(result.boxes.xyxy.cpu().numpy(), result.boxes.cls.cpu().numpy()):
+            # Increment object count
+            num_objects += 1
+            
+            # Extract bounding box coordinates
+            x1, y1, x2, y2 = map(int, box)
+            cropped_object = image[y1:y2, x1:x2]
+
+            # Create a folder for each class
+            class_name = f"class_{int(cls)}"
+            class_dir = PROCESSED_DIR / class_name
+            class_dir.mkdir(parents=True, exist_ok=True)
+
+            # Save the cropped image
+            cropped_file_path = class_dir / f"object_{num_objects}.png"
+            cv2.imwrite(str(cropped_file_path), cropped_object)
+    
+    return num_objects
 
 # function for cropping each detection, returning the largest one and resizing to a specified size in px
 def yolo_and_crop(image_array, yolo_model):
