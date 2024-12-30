@@ -10,8 +10,8 @@ app = FastAPI()
 UPLOAD_DIR = Path("uploads/raw")
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
-PROCESSED_DIR = Path("uploads/processed")
-PROCESSED_DIR.mkdir(exist_ok=True)
+DETECTED_DIR = Path("uploads/detected")
+DETECTED_DIR.mkdir(exist_ok=True)
 
 # Load a pretrained YOLO model
 model_yolo = YOLO("yolo11l.pt")
@@ -36,19 +36,13 @@ async def upload_image(file: UploadFile = File(...)):
         results = model_yolo(image, stream=True)
 
         # Process results: count and crop objects
-        num_objects = process_yolo_results(image, results)
-
-        processed_file_path = PROCESSED_DIR / f"processed_{file.filename}"
-        
-        # Save the processed image (dummy example using original image)
-        cv2.imwrite(str(processed_file_path), image)
+        num_objects = process_yolo_results(image, file.filename, results)
 
         return {
-            "message": "Image uploaded and processed successfully",
+            "message": "Image uploaded and detected successfully",
             "file_name": file.filename,
             "image_shape": image.shape,
-            "number_of_detected_objects": num_objects,
-            "processed_file": str(processed_file_path)
+            "number_of_detected_objects": num_objects
         }
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": str(e)})
@@ -65,13 +59,15 @@ async def download_image(file_name: str):
         return JSONResponse(status_code=404, content={"error": "File not found"})
 
 
-def process_yolo_results(image, results):
+def process_yolo_results(image, file_name, results):
     """
     Process YOLO results: count objects, crop detected objects,
-    and save them to the processed folder.
+    and save them to the 'detected' folder with their class names.
     """
+    class_names = model_yolo.names
+
     num_objects = 0
-    for i, result in enumerate(results):
+    for result in results:
         for box, cls in zip(result.boxes.xyxy.cpu().numpy(), result.boxes.cls.cpu().numpy()):
             # Increment object count
             num_objects += 1
@@ -80,13 +76,16 @@ def process_yolo_results(image, results):
             x1, y1, x2, y2 = map(int, box)
             cropped_object = image[y1:y2, x1:x2]
 
+            # Get class name
+            class_name = class_names[int(cls)]
+
             # Create a folder for each class
-            class_name = f"class_{int(cls)}"
-            class_dir = PROCESSED_DIR / class_name
+            class_dir = DETECTED_DIR / class_name
             class_dir.mkdir(parents=True, exist_ok=True)
 
             # Save the cropped image
-            cropped_file_path = class_dir / f"object_{num_objects}.png"
+            base_name = file_name.rsplit('.', 1)[0]
+            cropped_file_path = class_dir / f"{base_name}_object_{num_objects}.png"
             cv2.imwrite(str(cropped_file_path), cropped_object)
     
     return num_objects
