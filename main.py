@@ -43,7 +43,7 @@ async def upload_image(file: UploadFile = File(...)):
             "file_name": file.filename,
             "image_shape": image.shape,
             "number_of_detected_objects": num_objects,
-            "detected_objects": object_classes  # Include the dictionary
+            "detected_objects": object_classes  # Include the updated dictionary
         }
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": str(e)})
@@ -53,11 +53,24 @@ async def upload_image(file: UploadFile = File(...)):
 
 @app.get("/download-image/{file_name}")
 async def download_image(file_name: str):
-    file_path = UPLOAD_DIR / file_name
-    if file_path.exists():
-        return FileResponse(file_path, media_type="application/octet-stream", filename=file_name)
+    import re
+
+    # Check if the file name contains "object_d+"
+    if re.search(r"object_\d+", file_name):
+        # Search in uploads/detected and its subdirectories
+        for class_dir in DETECTED_DIR.iterdir():
+            if class_dir.is_dir():
+                detected_file_path = class_dir / file_name
+                if detected_file_path.exists():
+                    return FileResponse(detected_file_path, media_type="application/octet-stream", filename=file_name)
     else:
-        return JSONResponse(status_code=404, content={"error": "File not found"})
+        # Search in uploads/raw
+        raw_file_path = UPLOAD_DIR / file_name
+        if raw_file_path.exists():
+            return FileResponse(raw_file_path, media_type="application/octet-stream", filename=file_name)
+
+    # If file is not found
+    return JSONResponse(status_code=404, content={"error": "File not found"})
 
 
 def process_yolo_results(image, file_name, results):
@@ -67,7 +80,7 @@ def process_yolo_results(image, file_name, results):
     """
     class_names = model_yolo.names
     num_objects = 0
-    object_classes = {}  # Dictionary to hold object numbers and class names
+    object_classes = {}  # Dictionary to hold object numbers, class names, and saved image names
 
     for result in results:
         for box, cls in zip(result.boxes.xyxy.cpu().numpy(), result.boxes.cls.cpu().numpy()):
@@ -80,7 +93,6 @@ def process_yolo_results(image, file_name, results):
 
             # Get class name
             class_name = class_names[int(cls)]
-            object_classes[num_objects] = class_name  # Add to dictionary
 
             # Create a folder for each class
             class_dir = DETECTED_DIR / class_name
@@ -88,7 +100,14 @@ def process_yolo_results(image, file_name, results):
 
             # Save the cropped image
             base_name = file_name.rsplit('.', 1)[0]  # Remove file extension
-            cropped_file_path = class_dir / f"{base_name}_object_{num_objects}.png"
+            cropped_file_name = f"{base_name}_object_{num_objects}.png"
+            cropped_file_path = class_dir / cropped_file_name
             cv2.imwrite(str(cropped_file_path), cropped_object)
+
+            # Add to dictionary with the saved image name
+            object_classes[num_objects] = {
+                "class_name": class_name,
+                "saved_image_name": cropped_file_name
+            }
     
     return num_objects, object_classes
