@@ -55,46 +55,18 @@ async def upload_image(file: UploadFile = File(...)):
 
 @app.get("/download-image/{file_name}")
 async def download_image(file_name: str):
-    import re
-
-    # Check if the file name contains "object_d+"
-    if re.search(r"object_\d+", file_name):
-        # Search in uploads/detected and its subdirectories
-        for class_dir in DETECTED_DIR.iterdir():
-            if class_dir.is_dir():
-                detected_file_path = class_dir / file_name
-                if detected_file_path.exists():
-                    return FileResponse(detected_file_path, media_type="application/octet-stream", filename=file_name)
-    else:
-        # Search in uploads/raw
-        raw_file_path = UPLOAD_DIR / file_name
-        if raw_file_path.exists():
-            return FileResponse(raw_file_path, media_type="application/octet-stream", filename=file_name)
-
-    # If file is not found
-    return JSONResponse(status_code=404, content={"error": "File not found"})
+    try:
+        file_path = find_image_path(file_name)
+        return FileResponse(file_path, media_type="application/octet-stream", filename=file_name)
+    except FileNotFoundError as e:
+        return JSONResponse(status_code=404, content={"error": str(e)})
 
 @app.get("/get-similar-image/{file_name}")
 async def get_similar_image(file_name: str):
-    import re
-
-    # Determine where to look for the referenced image
-    if re.search(r"object_\d+", file_name):
-        # Search in detected folder
-        for class_dir in DETECTED_DIR.iterdir():
-            if class_dir.is_dir():
-                query_file_path = class_dir / file_name
-                if query_file_path.exists():
-                    break
-        else:
-            return JSONResponse(status_code=404, content={"error": "File not found in detected images"})
-    else:
-        # Search in raw folder
-        query_file_path = UPLOAD_DIR / file_name
-        if not query_file_path.exists():
-            return JSONResponse(status_code=404, content={"error": "File not found in raw images"})
-
     try:
+        # Find the query file path
+        query_file_path = find_image_path(file_name)
+
         # Load the query image for processing
         query_image = cv2.imread(str(query_file_path))
         if query_image is None:
@@ -111,10 +83,10 @@ async def get_similar_image(file_name: str):
             "query_file_name": file_name,
             "top_matches": [{"file_name": match[0], "similarity_score": match[1]} for match in matches]
         }
+    except FileNotFoundError as e:
+        return JSONResponse(status_code=404, content={"error": str(e)})
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": str(e)})
-
-
 
 def process_yolo_results(image, file_name, results):
     """
@@ -185,3 +157,26 @@ def compare_image(query_image: np.ndarray, search_dir: Path) -> List[Tuple[str, 
             matches.append((str(file_path), similarity_score))
 
     return matches
+
+def find_image_path(file_name: str) -> Path:
+    """
+    Finds the image path by searching in raw and detected directories.
+    Returns the path if found, otherwise raises a FileNotFoundError.
+    """
+    import re
+
+    # Check if the file name contains "object_d+"
+    if re.search(r"object_\d+", file_name):
+        # Search in detected folder
+        for class_dir in DETECTED_DIR.iterdir():
+            if class_dir.is_dir():
+                detected_file_path = class_dir / file_name
+                if detected_file_path.exists():
+                    return detected_file_path
+        raise FileNotFoundError(f"File '{file_name}' not found in detected images.")
+    else:
+        # Search in raw folder
+        raw_file_path = UPLOAD_DIR / file_name
+        if raw_file_path.exists():
+            return raw_file_path
+        raise FileNotFoundError(f"File '{file_name}' not found in raw images.")
