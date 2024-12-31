@@ -25,3 +25,5 @@ jobs:
     uses: ./.github/workflows/cve-scan.yml
     with:
       image-name: ghcr.io/${{ github.repository_owner }}/fastapi-image-detection:0.0.1
+    secrets:
+      GHCR_PAT: ${{ secrets.GHCR_PAT }}
