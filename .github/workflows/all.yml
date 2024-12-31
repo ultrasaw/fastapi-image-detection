@@ -17,6 +17,8 @@ jobs:
     uses: ./.github/workflows/build-push.yml
     with:
       image-name: ghcr.io/${{ github.repository_owner }}/fastapi-image-detection:0.0.1
+    secrets:
+      GHCR_PAT: ${{ secrets.GHCR_PAT }}
 
   scan:
     needs: build-push

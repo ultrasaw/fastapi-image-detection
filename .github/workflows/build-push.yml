@@ -6,6 +6,9 @@ on:
       image-name:
         required: true
         type: string
+    secrets:
+      GHCR_PAT:
+        required: true
 
 jobs:
   build-and-push:
