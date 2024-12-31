@@ -20,7 +20,7 @@ jobs:
     secrets:
       GHCR_PAT: ${{ secrets.GHCR_PAT }}
 
-  scan:
+  cve-scan:
     needs: build-push
     uses: ./.github/workflows/cve-scan.yml
     with:

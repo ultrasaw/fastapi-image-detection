@@ -11,7 +11,7 @@ on:
         required: true
 
 jobs:
-  build-and-push:
+  build-push:
     runs-on: ubuntu-latest
 
     steps:
