@@ -23,6 +23,11 @@ FROM python:3.12-slim
 # Set working directory
 WORKDIR /app
 
+# Install runtime dependency for OpenCV
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libglib2.0-0 libgl1 \
+    && rm -rf /var/lib/apt/lists/*
+
 # Copy the virtual environment from the builder stage
 COPY --from=builder /opt/venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"

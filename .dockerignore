@@ -1,0 +1,7 @@
+# Ignore everything by default
+*
+
+# Include Python and text files
+!modules/*
+!*.py
+!*.txt

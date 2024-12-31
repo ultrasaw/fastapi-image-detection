@@ -2,13 +2,14 @@ from modules.utils import process_yolo_results, compare_image, find_image_path
 
 from pathlib import Path
 from typing import List, Tuple, Dict
-from skimage.metrics import structural_similarity as compare_ssim
-from ultralytics import YOLO  # pip install ultralyitcs
+from skimage.metrics import structural_similarity as compare_ssim # pip install scikit-image
+# pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+from ultralytics import YOLO # pip install ultralytics
 from fastapi import FastAPI, File, UploadFile  # pip install fastapi uvicorn python-multipart
 from fastapi.responses import FileResponse, JSONResponse
 import shutil
 import re
-import cv2
+import cv2 # pip install opencv-python-headless
 import numpy as np
 
 app = FastAPI()
