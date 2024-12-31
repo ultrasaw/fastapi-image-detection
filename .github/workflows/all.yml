@@ -1,0 +1,34 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+env:
+  FULL_IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/fastapi-image-detection:0.0.1
+
+jobs:
+  static-analysis:
+    uses: ./.github/workflows/static-analysis.yml
+    with:
+      python-version: '3.12'
+
+  build:
+    needs: static-analysis
+    uses: ./.github/workflows/build.yml
+    with:
+      image-name: ${{ env.FULL_IMAGE_NAME }}
+
+  push:
+    needs: build
+    uses: ./.github/workflows/push.yml
+    with:
+      image-name: ${{ env.FULL_IMAGE_NAME }}
+
+  scan:
+    needs: push
+    uses: ./.github/workflows/scan.yml
+    with:
+      image-name: ${{ env.FULL_IMAGE_NAME }}
