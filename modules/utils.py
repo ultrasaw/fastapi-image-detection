@@ -5,12 +5,12 @@ import cv2
 import numpy as np
 import re
 
-def process_yolo_results(image: np.ndarray, file_name: str, results, detected_dir: Path) -> Tuple[int, Dict[int, Dict[str, str]]]:
+def process_yolo_results(image: np.ndarray, file_name: str, results, model, detected_dir: Path) -> Tuple[int, Dict[int, Dict[str, str]]]:
     """
     Process YOLO results: count objects, crop detected objects,
     and save them to the detected folder with their class names.
     """
-    class_names: List[str] = results.names
+    class_names: List[str] = model.names
     num_objects: int = 0
     object_classes: Dict[int, Dict[str, str]] = {}
 

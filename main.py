@@ -43,7 +43,7 @@ async def upload_image(file: UploadFile = File(...)):
         results = model_yolo(image, stream=True)
 
         # Process results: count and crop objects
-        num_objects, object_classes = process_yolo_results(image, file.filename, results)
+        num_objects, object_classes = process_yolo_results(image, file.filename, results, model_yolo, DETECTED_DIR)
 
         return JSONResponse(
             content={
@@ -63,7 +63,7 @@ async def upload_image(file: UploadFile = File(...)):
 @app.get("/download-image/{file_name}")
 async def download_image(file_name: str):
     try:
-        file_path: Path = find_image_path(file_name)
+        file_path: Path = find_image_path(file_name, UPLOAD_DIR, DETECTED_DIR)
         return FileResponse(file_path, media_type="application/octet-stream", filename=file_name)
     except FileNotFoundError as e:
         return JSONResponse(status_code=404, content={"error": str(e)})
@@ -73,7 +73,7 @@ async def download_image(file_name: str):
 async def get_similar_image(file_name: str):
     try:
         # Find the query file path
-        query_file_path: Path = find_image_path(file_name)
+        query_file_path: Path = find_image_path(file_name, UPLOAD_DIR, DETECTED_DIR)
 
         # Load the query image for processing
         query_image: np.ndarray = cv2.imread(str(query_file_path))
