@@ -1,4 +1,6 @@
 from pathlib import Path
+from typing import List, Tuple
+from skimage.metrics import structural_similarity as compare_ssim
 from ultralytics import YOLO # pip install ultralyitcs
 from fastapi import FastAPI, File, UploadFile # pip install fastapi uvicorn python-multipart
 from fastapi.responses import FileResponse, JSONResponse
@@ -72,6 +74,47 @@ async def download_image(file_name: str):
     # If file is not found
     return JSONResponse(status_code=404, content={"error": "File not found"})
 
+@app.get("/get-similar-image/{file_name}")
+async def get_similar_image(file_name: str):
+    import re
+
+    # Determine where to look for the referenced image
+    if re.search(r"object_\d+", file_name):
+        # Search in detected folder
+        for class_dir in DETECTED_DIR.iterdir():
+            if class_dir.is_dir():
+                query_file_path = class_dir / file_name
+                if query_file_path.exists():
+                    break
+        else:
+            return JSONResponse(status_code=404, content={"error": "File not found in detected images"})
+    else:
+        # Search in raw folder
+        query_file_path = UPLOAD_DIR / file_name
+        if not query_file_path.exists():
+            return JSONResponse(status_code=404, content={"error": "File not found in raw images"})
+
+    try:
+        # Load the query image for processing
+        query_image = cv2.imread(str(query_file_path))
+        if query_image is None:
+            return JSONResponse(status_code=400, content={"error": "Invalid query image file"})
+
+        # Search for matches in all uploads (raw and detected)
+        matches = compare_image(query_image, UPLOAD_DIR) + compare_image(query_image, DETECTED_DIR)
+
+        # Sort matches by similarity (highest SSIM score first) and limit to top 10
+        matches = sorted(matches, key=lambda x: x[1], reverse=True)[:10]
+
+        return {
+            "message": "Search completed",
+            "query_file_name": file_name,
+            "top_matches": [{"file_name": match[0], "similarity_score": match[1]} for match in matches]
+        }
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": str(e)})
+
+
 
 def process_yolo_results(image, file_name, results):
     """
@@ -111,3 +154,34 @@ def process_yolo_results(image, file_name, results):
             }
     
     return num_objects, object_classes
+
+def compare_image(query_image: np.ndarray, search_dir: Path) -> List[Tuple[str, float]]:
+    """
+    Searches for similar images in the specified directory (including subdirectories).
+    Converts images to grayscale and compares using SSIM.
+    Returns a list of tuples containing file names and similarity scores.
+    """
+    matches = []
+    # Convert the query image to grayscale
+    query_gray = cv2.cvtColor(query_image, cv2.COLOR_BGR2GRAY)
+
+    for file_path in search_dir.rglob("*.*"):  # Search all files in subdirectories
+        if file_path.suffix.lower() in [".png", ".jpg", ".jpeg"]:  # Supported image formats
+            target_image = cv2.imread(str(file_path))
+            if target_image is None:
+                continue
+
+            # Convert the target image to grayscale
+            target_gray = cv2.cvtColor(target_image, cv2.COLOR_BGR2GRAY)
+
+            # Resize images to the same size for comparison
+            query_resized = cv2.resize(query_gray, (100, 100))
+            target_resized = cv2.resize(target_gray, (100, 100))
+
+            # Calculate similarity using SSIM
+            similarity_score, _ = compare_ssim(query_resized, target_resized, full=True)
+
+            # Append the file name and similarity score
+            matches.append((str(file_path), similarity_score))
+
+    return matches
