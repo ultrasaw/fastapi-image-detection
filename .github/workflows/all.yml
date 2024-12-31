@@ -6,9 +6,6 @@ on:
       - main
   workflow_dispatch:
 
-env:
-  FULL_IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/fastapi-image-detection:0.0.1
-
 jobs:
   static-analysis:
     uses: ./.github/workflows/static-analysis.yml
@@ -19,16 +16,16 @@ jobs:
     needs: static-analysis
     uses: ./.github/workflows/build.yml
     with:
-      image-name: ${{ env.FULL_IMAGE_NAME }}
+      image-name: ghcr.io/${{ github.repository_owner }}/fastapi-image-detection:0.0.1
 
   push:
     needs: build
     uses: ./.github/workflows/push.yml
     with:
-      image-name: ${{ env.FULL_IMAGE_NAME }}
+      image-name: ghcr.io/${{ github.repository_owner }}/fastapi-image-detection:0.0.1
 
   scan:
     needs: push
     uses: ./.github/workflows/cve-scan.yml
     with:
-      image-name: ${{ env.FULL_IMAGE_NAME }}
+      image-name: ghcr.io/${{ github.repository_owner }}/fastapi-image-detection:0.0.1
