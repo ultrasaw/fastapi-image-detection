@@ -96,6 +96,42 @@ async def get_similar_image(file_name: str):
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": str(e)})
 
+@app.get("/list-images/")
+async def list_images():
+    raw_images = [str(file.name) for file in UPLOAD_DIR.glob("*.*") if file.suffix.lower() in [".png", ".jpg", ".jpeg"]]
+    detected_images = [
+        str(file.name) 
+        for class_dir in DETECTED_DIR.iterdir() if class_dir.is_dir()
+        for file in class_dir.glob("*.*") if file.suffix.lower() in [".png", ".jpg", ".jpeg"]
+    ]
+
+    return JSONResponse(
+        content={
+            "raw_images": raw_images,
+            "detected_images": detected_images,
+            "total_images": len(raw_images) + len(detected_images)
+        }
+    )
+
+@app.get("/list-images/")
+async def list_images():
+    """
+    Returns a list of all image file names in both uploads/raw and uploads/detected directories.
+    """
+    raw_images = [str(file.name) for file in UPLOAD_DIR.glob("*.*") if file.suffix.lower() in [".png", ".jpg", ".jpeg"]]
+    detected_images = [
+        str(file.name) 
+        for class_dir in DETECTED_DIR.iterdir() if class_dir.is_dir()
+        for file in class_dir.glob("*.*") if file.suffix.lower() in [".png", ".jpg", ".jpeg"]
+    ]
+
+    return JSONResponse(
+        content={
+            "raw_images": raw_images,
+            "detected_images": detected_images,
+            "total_images": len(raw_images) + len(detected_images)
+        }
+    )
 
 def process_yolo_results(image: np.ndarray, file_name: str, results) -> Tuple[int, Dict[int, Dict[str, str]]]:
     """
