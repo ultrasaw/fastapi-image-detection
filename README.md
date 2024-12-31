@@ -19,10 +19,10 @@ uvicorn main:app --reload
 
 ## docker
 ```bash
-docker build -t fastapi-image-detection:0.0.1 .
-docker run -p 8000:8000 fastapi-image-detection:0.0.1
+docker build -t fastapi-image-detection:TAG .
+docker run -p 8000:8000 fastapi-image-detection:TAG
 
-docker exec -it fastapi-image-detection:0.0.1 bash
+docker exec -it fastapi-image-detection:TAG bash
 
-docker image rm fastapi-image-detection:0.0.1 -f
+docker image rm fastapi-image-detection:TAG -f
 ```
