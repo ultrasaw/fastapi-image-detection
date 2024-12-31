@@ -29,6 +29,6 @@ jobs:
 
   scan:
     needs: push
-    uses: ./.github/workflows/scan.yml
+    uses: ./.github/workflows/cve-scan.yml
     with:
       image-name: ${{ env.FULL_IMAGE_NAME }}
