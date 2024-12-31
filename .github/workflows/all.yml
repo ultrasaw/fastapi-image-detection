@@ -14,12 +14,12 @@ jobs:
 
   build-push:
     needs: static-analysis
-    uses: ./.github/workflows/build-and-push.yml
+    uses: ./.github/workflows/build-push.yml
     with:
       image-name: ghcr.io/${{ github.repository_owner }}/fastapi-image-detection:0.0.1
 
   scan:
-    needs: push
+    needs: build-push
     uses: ./.github/workflows/cve-scan.yml
     with:
       image-name: ghcr.io/${{ github.repository_owner }}/fastapi-image-detection:0.0.1
