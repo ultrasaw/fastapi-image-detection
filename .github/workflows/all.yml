@@ -12,15 +12,9 @@ jobs:
     with:
       python-version: '3.12'
 
-  build:
+  build-push:
     needs: static-analysis
-    uses: ./.github/workflows/build.yml
-    with:
-      image-name: ghcr.io/${{ github.repository_owner }}/fastapi-image-detection:0.0.1
-
-  push:
-    needs: build
-    uses: ./.github/workflows/push.yml
+    uses: ./.github/workflows/build-and-push.yml
     with:
       image-name: ghcr.io/${{ github.repository_owner }}/fastapi-image-detection:0.0.1
 
