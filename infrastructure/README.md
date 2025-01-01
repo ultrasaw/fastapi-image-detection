@@ -5,7 +5,7 @@ Use the Terraform code in the *terraform* folder to provision EC2 instances that
 export AWS_ACCESS_KEY_ID="YOUR_KEY"
 export AWS_SECRET_ACCESS_KEY="YOUR_SECRET"
 
-cd terraform/
+cd infrastructure/terraform/
 
 # change the "region" variable to suit your preference; default is 'eu-central-1'
 # if you change the region, variable "ami_id" must also be adjusted according to your region
@@ -24,7 +24,7 @@ terraform destroy --auto-approve
 
 ## SSH access
 ```bash
-vim ~/.ssh/config
+vim /etc/ssh/ssh_config
 
 # Add Hostnames declared below
 # configuration for EC2 instances; Ubuntu (!) machines
@@ -33,30 +33,17 @@ Host *amazonaws.com
   IdentityFile ~/.ssh/k3s-machines.pem # place your private key (generated via the AWS console) in the .ssh/ sub-directory
   IdentitiesOnly yes
   CheckHostIP no
-
-# optional: configure individual hostnames for brevity
-Host k3s-master
-  HostName <ec2-PUBLIC_IP.REGION>.compute.amazonaws.com # specific hostname for brevity, ! changes w/ every instance stop/start
-  User ubuntu
-  IdentityFile ~/.ssh/k3s-machines.pem # place your private key (generated via the AWS console) in the .ssh/ sub-directory
-  IdentitiesOnly yes
-
-Host k3s-worker
-  HostName <ec2-PUBLIC_IP.REGION>.compute.amazonaws.com # specific hostname for brevity, ! changes w/ every instance stop/start
-  User ubuntu
-  IdentityFile ~/.ssh/k3s-machines.pem
-  IdentitiesOnly yes
-
-...
 ```
 
 ### Cluster setup
 
 Initial single-node cluster.
 ```bash
-export HOSTNAME="EC2_MASTER_HOSTNAME"
+cd infrastracture/
+
+export HOSTNAME="EC2_MASTER_HOSTNAME" # e.g. ec2-3-68-220-36.eu-central-1.compute.amazonaws.com
 export USER=ubuntu
-export K3S_VERSION=v1.30.8+k3s11 # same version as the rancher local cluster
+export K3S_VERSION=v1.30.8+k3s1 # same version as the rancher local cluster
 export SSH_KEY_PATH="/home/<USER>/.ssh/k3s-machines.pem" # point to the ssh key location locally
 
 # first install the k3sup CLI; traefik not deployed, we use nginx
@@ -80,11 +67,11 @@ kubectl run tmp --image=nginx:latest -it --rm --restart=Never -- curl https://go
 Add *n* more nodes for redundancy; note: workloads can be scheduled on *master* nodes.
 ```bash
 export SERVER_HOST_ONE="EC2_MASTER_HOSTNAME" # existing master node (k3s 'server')
-export NEXT_HOST_TWO="EC2_MASTER_HOSTNAME" # another 'master' node to be added
-export NEXT_HOST_THREE="EC2_WORKER_HOSTNAME" # another 'worker' node to be added
+export NEXT_HOST_TWO="EC2_MASTER_HOSTNAME_2" # another 'master' node to be added
+export NEXT_HOST_THREE="EC2_WORKER_HOSTNAME_1" # another 'worker' node to be added
 ...
 export USER=ubuntu
-export K3S_VERSION=v1.30.8+k3s11
+export K3S_VERSION=v1.30.8+k3s1
 export SSH_KEY_PATH="/home/<USER>/.ssh/k3s-machines.pem" # modify
 
 #  --server flag: Join the cluster as a server (master) rather than as an agent (worker) for the embedded etcd mode; omit if joining a worker-only node

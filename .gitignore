@@ -2,3 +2,9 @@
 *cache*/
 *upload*/
 yolo*
+
+infrastructure/terraform/.terraform/**
+infrastructure/terraform/.terraform.*
+infrastructure/terraform/terraform.tfstate*
+infrastructure/terraform/local/**
+infrastructure/kubeconfig
