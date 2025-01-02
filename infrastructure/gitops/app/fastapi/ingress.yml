@@ -5,11 +5,11 @@ metadata:
   annotations:
     kubernetes.io/ingress.class: nginx
 spec:
-  tls:
-  - hosts:
-    - ec2-3-72-8-133.eu-central-1.compute.amazonaws.com
+  # tls:
+  # - hosts:
+  #   - ec2-3-72-8-133.eu-central-1.compute.amazonaws.com
   rules:
-  - host: ec2-3-72-8-133.eu-central-1.compute.amazonaws.com
+  - host: app-alb-2076960796.eu-central-1.elb.amazonaws.com
     http:
       paths:
       - backend:
