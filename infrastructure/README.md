@@ -118,3 +118,12 @@ flux bootstrap github \
   --personal
 
 ```
+### Deployment setup
+Create the GitHub Container Registry secret:
+```bash
+kubectl create secret docker-registry ghcr-secret -n fastapi \
+  --docker-server=ghcr.io \
+  --docker-username=<YOUR_GH_USERNAME> \
+  --docker-password=$GITHUB_PULL \
+  --docker-email=<YOUR_EMAIL>
+``` 
