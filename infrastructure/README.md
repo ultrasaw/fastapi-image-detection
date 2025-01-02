@@ -118,7 +118,11 @@ flux bootstrap github \
   --personal
 
 ```
-### Deployment setup
+Flux will deploy all applications and services defined in the infrastructure/gitops sub-directory.
+
+### Secrets setup
+A secret containing the GitHub Container Registry must be created so that the cluster workloads can fetch the images built with GitHub Actions.
+
 Create the GitHub Container Registry secret:
 ```bash
 kubectl create secret docker-registry ghcr-secret -n fastapi \
@@ -126,4 +130,4 @@ kubectl create secret docker-registry ghcr-secret -n fastapi \
   --docker-username=<YOUR_GH_USERNAME> \
   --docker-password=$GITHUB_PULL \
   --docker-email=<YOUR_EMAIL>
-``` 
+```
