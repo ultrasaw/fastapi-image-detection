@@ -8,7 +8,7 @@ spec:
   sourceRef:
     kind: GitRepository
     name: flux-system
-  path: ./infrastructure/gitops/baselayer/ingress-nginx
+  path: ./infrastructure/gitops/services/ingress-nginx
   prune: false
   suspend: false
   targetNamespace: ingress-nginx

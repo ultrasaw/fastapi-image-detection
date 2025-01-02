@@ -1,0 +1,14 @@
+# apiVersion: kustomize.toolkit.fluxcd.io/v1
+# kind: Kustomization
+# metadata:
+#   name: fastapi
+#   namespace: flux-system
+# spec:
+#   interval: 2m
+#   sourceRef:
+#     kind: GitRepository
+#     name: flux-system
+#   path: ./infrastructure/gitops/apps/fastapi
+#   prune: false
+#   suspend: false
+#   targetNamespace: fastapi
