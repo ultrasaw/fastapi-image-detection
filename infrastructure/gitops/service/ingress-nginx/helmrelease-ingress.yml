@@ -25,4 +25,4 @@ spec:
         nodePorts:
           http: 32080
           https: 32443
-        type: NodePort # can be e.g. NodePort, LoadBalancer; NodePort is sufficient for a one-node demo cluster
+        type: LoadBalancer # can be e.g. NodePort, LoadBalancer
