@@ -114,7 +114,7 @@ flux bootstrap github \
   --owner=MY-GH-USERNAME \
   --repository=fastapi-image-detection \
   --branch=main \
-  --path=infrastructure/gitops \
+  --path=infrastructure/gitops/sources \
   --personal
 
 ```
