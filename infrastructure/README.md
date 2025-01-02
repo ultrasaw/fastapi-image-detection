@@ -114,7 +114,7 @@ flux bootstrap github \
   --owner=MY-GH-USERNAME \
   --repository=fastapi-image-detection \
   --branch=main \
-  --path=infrastructure/gitops/source \
+  --path=infrastructure/gitops/source  \
   --personal
 ```
 Flux will deploy all applications and services defined in the infrastructure/gitops sub-directory.
