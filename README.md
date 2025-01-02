@@ -31,6 +31,8 @@ Start the application locally:
 uvicorn main:app --reload
 ```
 
+Navigate to http://127.0.0.1:8000/docs in your browser to test the application functionality.
+
 ### docker
 Docker commands to:
 - Build the image;
