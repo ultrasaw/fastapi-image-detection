@@ -1,4 +1,5 @@
-# Node Provisioning
+## Infra setup
+### Node provisioning
 Use the Terraform code in the *terraform* folder to provision EC2 instances that can serve as a sandbox Kubernetes cluster.
 ```bash
 # AWS api key/secret
@@ -22,7 +23,7 @@ terraform apply --auto-approve
 terraform destroy --auto-approve
 ```
 
-## SSH access
+### SSH access
 ```bash
 vim /etc/ssh/ssh_config
 
@@ -97,3 +98,23 @@ k3sup join \
 ```
 
 Repeat the aforementioned procedure (`k3sup join`) for as many nodes as needed.
+
+## GitOps
+### Flux setup
+Generate a GitHub PAT that can create repositories by checking all permissions under repo. Then export as an environment variable.
+
+```bash
+export GITHUB_TOKEN=<GH_PAT>
+```
+
+Run the bootstrap for a repository on your personal GitHub account:
+```bash
+flux bootstrap github \
+  --token-auth \
+  --owner=MY-GH-USERNAME \
+  --repository=fastapi-image-detection \
+  --branch=main \
+  --path=infrastructure/gitops \
+  --personal
+
+```
