@@ -48,8 +48,3 @@ resource "aws_security_group_rule" "allow_alb_to_instance" {
   security_group_id = aws_security_group.allow_ssh_and_ports.id
   cidr_blocks       = ["0.0.0.0/0"] # from anywhere
 }
-
-locals {
-  alb_security_group_id = aws_security_group.allow_ssh_and_ports.id
-}
-
