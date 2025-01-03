@@ -18,5 +18,5 @@ spec:
             name: backend
             port:
               number: 8000
-        path: /docs
+        path: /
         pathType: Prefix
