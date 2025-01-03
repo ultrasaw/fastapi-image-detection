@@ -41,12 +41,12 @@ resource "aws_lb_target_group_attachment" "app_tg_attachment" {
 }
 
 resource "aws_security_group_rule" "allow_alb_to_instance" {
-  type                     = "ingress"
-  from_port                = 80
-  to_port                  = 80
-  protocol                 = "tcp"
-  security_group_id        = aws_security_group.allow_ssh_and_ports.id
-  source_security_group_id = local.alb_security_group_id
+  type              = "ingress"
+  from_port         = 80
+  to_port           = 80
+  protocol          = "tcp"
+  security_group_id = aws_security_group.allow_ssh_and_ports.id
+  cidr_blocks       = ["0.0.0.0/0"] # from anywhere
 }
 
 locals {
