@@ -117,7 +117,7 @@ flux bootstrap github \
   --path=infrastructure/gitops/source  \
   --personal
 ```
-Flux will deploy all applications and services defined in the infrastructure/gitops sub-directory.
+Flux will deploy all applications and services defined in the *infrastructure/gitops* sub-directory.
 
 ### Secrets setup
 A secret containing the GitHub Container Registry must be created so that the cluster workloads can fetch the images built with GitHub Actions. Each secret is namespace-scoped.
@@ -132,3 +132,7 @@ kubectl create secret docker-registry ghcr-secret -n fastapi \
 ```
 
 In a production environment, consider using HaschiCorp Vault, Infisical or an AWS/Azure/GCP managed service.
+
+### Ingress setup
+
+Modify the *infrastructure/gitops/app/fastapi/ingress.yml* file to use either the Load Balancer domain name, your real (purchased) domain name or a fake domain name (requires editing your hosts file).

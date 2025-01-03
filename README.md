@@ -5,6 +5,8 @@ A tiny backend for image object detection w/ YOLO. Included REST endpoints:
 - GET to compute a similarity score between a given image (specified by image name) and all existing images. The score is computed using *scikit's* ```structural_similarity``` function.
 - GET to download an image (specified by image name).
 
+The purpose of this project is to demonstrate creation of a lightweight Kubernetes cluster on AWS and deploy public-facing workloads on the cluster via GitOps. 
+
 ## Local development
 ### venv
 Create a python virtual environment:
